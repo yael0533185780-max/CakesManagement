@@ -3,6 +3,7 @@ package com.example.cakesmenagement.Service;
 import com.example.cakesmenagement.Entities.*;
 import com.example.cakesmenagement.JWT.JwtUtil;
 import com.example.cakesmenagement.Repositories.*;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import static com.example.cakesmenagement.Entities.Payments.PaymentStatus.SUCCES
 
 
 @Service
+@Transactional
 public class AdminService {
     @Autowired
     private JwtUtil jwtUtil;

@@ -6,6 +6,7 @@ import com.example.cakesmenagement.Entities.Categories;
 import com.example.cakesmenagement.Repositories.CategoriesRepo;
 import com.example.cakesmenagement.Service.AdminService;
 import com.example.cakesmenagement.Service.ClientService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +28,7 @@ public class CategoriesController {
         return clientService.getAllCategories();
     }
     @PostMapping("/admin/add")
-    public Categories add(@RequestBody Categories category) {
+    public Categories add(@Valid  @RequestBody Categories category) {
         return adminService.addCategory(category);
     }
     @PutMapping("/admin/update/{id}")

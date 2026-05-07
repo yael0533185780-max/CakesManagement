@@ -4,6 +4,7 @@ import com.example.cakesmenagement.Entities.Orders;
 import com.example.cakesmenagement.Entities.Payments;
 import com.example.cakesmenagement.Service.AdminService;
 import com.example.cakesmenagement.Service.ClientService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +23,7 @@ public class PaymentsController {
     private AdminService adminService;
 
     @PostMapping("/process")
-    public Payments processPayment(@RequestBody Payments payment) {
+    public Payments processPayment(@Valid  @RequestBody Payments payment) {
         return clientService.addPayment(payment);
     }
 

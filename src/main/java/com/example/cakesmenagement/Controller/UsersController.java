@@ -4,6 +4,7 @@ import com.example.cakesmenagement.Entities.OrderItem;
 import com.example.cakesmenagement.Entities.Users;
 import com.example.cakesmenagement.Service.AdminService;
 import com.example.cakesmenagement.Service.ClientService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,7 @@ public class UsersController {
     private AdminService adminService;
 
     @PutMapping("/{id}")
-    public void update(@PathVariable int id, @RequestBody Users user) {
+    public void update(@PathVariable int id,@Valid @RequestBody Users user) {
         clientService.updateUser(id, user);
     }
 
@@ -30,7 +31,7 @@ public class UsersController {
     }
 
     @PostMapping("/{id}/cart/add")
-    public List<OrderItem> addToCart(@PathVariable int id, @RequestBody Cakes cake) {
+    public List<OrderItem> addToCart(@PathVariable int id,@Valid @RequestBody Cakes cake) {
         return clientService.addToCart(cake, id);
     }
 

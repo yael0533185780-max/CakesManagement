@@ -3,6 +3,7 @@ import com.example.cakesmenagement.Entities.Cakes;
 import com.example.cakesmenagement.Entities.Orders;
 import com.example.cakesmenagement.Service.AdminService;
 import com.example.cakesmenagement.Service.ClientService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +23,7 @@ public class OrdersController {
     private AdminService adminService;
 
     @PostMapping("/add")
-    public void addOrder(@RequestBody Orders order) {
+    public void addOrder(@Valid  @RequestBody Orders order) {
         clientService.addOrder(order);
     }
 
@@ -47,7 +48,7 @@ public class OrdersController {
         return adminService.getOrderByDate(date);
     }
     @PutMapping("/admin/update/{id}")
-    public void updateOrder(@PathVariable int id, @RequestBody Orders order) {
+    public void updateOrder(@PathVariable int id,@Valid @RequestBody Orders order) {
         adminService.updateOrder(id, order);
     }
     @GetMapping("/admin/user/{userId}")

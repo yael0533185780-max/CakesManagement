@@ -4,9 +4,13 @@ import com.example.cakesmenagement.Dto.RegisterRequest;
 import com.example.cakesmenagement.Entities.*;
 import com.example.cakesmenagement.JWT.JwtUtil;
 import com.example.cakesmenagement.Repositories.*;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
+import org.springframework.web.util.HtmlUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -15,7 +19,7 @@ import java.util.Optional;
 import static com.example.cakesmenagement.Entities.Orders.OrderStatus.PAID;
 
 @Service
-
+@Transactional
 public class ClientService {
     @Autowired
     private UsersRepo usersRepo;
@@ -63,6 +67,10 @@ public class ClientService {
     public void updateUser(int id,Users u1) {
         Users user = usersRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("id not exist"));
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!user.getEmail().equals(currentUserEmail)) {
+            throw new RuntimeException("אבטחה: אין לך הרשאה לעדכן פרטים של משתמש אחר!");
+        }
         user.setName(u1.getName());
         user.setEmail(u1.getEmail());
         user.setPhoneNumber(u1.getPhoneNumber());
@@ -71,33 +79,35 @@ public class ClientService {
         usersRepo.save(user);
     }
     public List<OrderItem> getCart(int id) {
-        Optional<Users> user = usersRepo.findById(id);
-        if (!user.isPresent()) {
-            throw new RuntimeException("id not exist");
+        Users user = usersRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("id not exist"));
+        // --- תוספת אבטחה (מניעת IDOR): בדיקה האם מי שביקש הוא באמת בעל העגלה ---
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!user.getEmail().equals(currentUserEmail)) {
+            throw new RuntimeException("אבטחה: אין לך הרשאה לצפות בעגלה של משתמש אחר!");
         }
-        return user.get().getCakesInCart();
+
+        return user.getCakesInCart();
     }
+
     public List<String> addRecommendation(int cakeId, String text) {
-        // 1. מציאת העוגה מה-Repository
         Cakes cake = cakeRepo.findById(cakeId)
                 .orElseThrow(() -> new RuntimeException("עוגה לא נמצאה"));
-
-        // 2. הוספת הטקסט החדש לרשימת ההמלצות (ElementCollection)
-        cake.getRecommendation().add(text);
-
-        // 3. שמירה מחדש של האובייקט - המערכת תעדכן את טבלת העזר לבד
+        // --- תוספת אבטחת מידע: ניקוי קוד זדוני (Sanitization) נגד XSS ---
+        String safeText = HtmlUtils.htmlEscape(text);
+        cake.getRecommendation().add(safeText);
         cakeRepo.save(cake);
-
-        // 4. החזרת הרשימה המעודכנת לצורך תצוגה מיידית ב-React
         return cake.getRecommendation();
     }
     public List<OrderItem> addToCart(Cakes c1, int userId) {
 //        לטפל בהרשאות אם המשתמש לא מחובר להעביר להרשמה
-        Optional<Users> user = usersRepo.findById(userId);
-        if (!user.isPresent()) {
-            throw new RuntimeException("id not exist");
+        Users user = usersRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("id not exist"));
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!user.getEmail().equals(currentUserEmail)) {
+            throw new RuntimeException("אבטחה: אין לך הרשאה להוסיף לעגלה של משתמש אחר!");
         }
-        OrderItem existingOrderItem = user.get().getCakesInCart().stream()
+        OrderItem existingOrderItem = user.getCakesInCart().stream()
                 .filter(item -> item.getCake().getId()==c1.getId())
                 .findFirst()
                 .orElse(null);
@@ -108,16 +118,19 @@ public class ClientService {
             OrderItem newItem = new OrderItem();
             newItem.setCake(c1);
             newItem.setQuantity(1);
-            user.get().getCakesInCart().add(newItem);
-            usersRepo.save(user.get());
+            user.getCakesInCart().add(newItem);
+            usersRepo.save(user);
         }
-        return user.get().getCakesInCart();
+        return user.getCakesInCart();
     }
     public List<OrderItem> removeFromCart(int cakeId, int userId) {
         // 1. שליפת המשתמש ובדיקה שהוא קיים
         Users user = usersRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!user.getEmail().equals(currentUserEmail)) {
+            throw new RuntimeException("אבטחה: אין לך הרשאה להסיר מעגלה של משתמש אחר!");
+        }
         // 2. חיפוש הפריט הספציפי בעגלה לפי ה-ID של העוגה
         OrderItem existingOrderItem = user.getCakesInCart().stream()
                 .filter(item -> item.getCake().getId() == cakeId) // וודאי שכאן זה getCode() או getId() לפי הישות Cakes
@@ -133,6 +146,9 @@ public class ClientService {
         return user.getCakesInCart();
     }
     public void addOrder(Orders o) {
+        if (o.getNotes() != null) {
+            o.setNotes(HtmlUtils.htmlEscape(o.getNotes()));
+        }
         if(o.getStatus()!=PAID){
             throw new RuntimeException("you didn't pay");
         }
@@ -163,17 +179,19 @@ public class ClientService {
     }
 
     public Payments addPayment(Payments payment) {
-        if (paymentsRepo.existsById(payment.getId())) {
-            throw new RuntimeException("Payment ID already exists");
+        Orders order = orderRepo.findById(payment.getOrder().getOrderCode())
+                .orElseThrow(() -> new RuntimeException("הזמנה לא קיימת"));
+
+        // בדיקת אבטחה קריטית! האם הסכום ששולם שווה לסכום ההזמנה?
+        if (payment.getAmount() != order.getTotalPrice()) {
+            throw new RuntimeException("אבטחה: סכום התשלום אינו תואם לסכום ההזמנה!");
         }
+
+        payment.setOrder(order);
         Payments savedPayment = paymentsRepo.save(payment);
-        Orders order = savedPayment.getOrder();
-        if (order != null) {
-            order.setStatus(PAID);
-            orderRepo.save(order);
-        } else {
-            throw new RuntimeException("Payment must be linked to an existing order");
-        }
+        order.setStatus(PAID);
+        orderRepo.save(order);
+
         return savedPayment;
     }
     public Payments getPaymentById(int id) {
