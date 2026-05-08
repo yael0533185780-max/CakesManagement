@@ -8,6 +8,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.util.HtmlUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.example.cakesmenagement.Entities.Orders.OrderStatus.PAID;
-
+@CrossOrigin(origins = "http://localhost:5173")
 @Service
 @Transactional
 public class ClientService {
@@ -43,7 +44,7 @@ public class ClientService {
         u.setEmail(request.getEmail());
         u.setPhoneNumber(request.getPhoneNumber());
         u.setPassword(passwordEncoder.encode(request.getPassword()));
-        u.setRole("ROLE_USER");
+        u.setRole("ROLE_ADMIN");
         return usersRepo.save(u);
     }
     @Autowired

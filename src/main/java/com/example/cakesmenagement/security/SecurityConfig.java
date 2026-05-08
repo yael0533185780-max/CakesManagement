@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,8 +21,6 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
-    // 🔹 התוספת: הגדרת היררכיית הרשאות
-    // הפונקציה הזו יוצרת כלל מערכתי ש-ADMIN הוא גם USER
     @Bean
     public RoleHierarchy roleHierarchy() {
         RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
@@ -31,40 +30,35 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable()) // ביטול CSRF
+        http
+                // ✅ התוספת הקריטית: מאפשר ל-Security להשתמש בהגדרות ה-CORS שלך
+                .cors(Customizer.withDefaults())
+
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // פתוח לכולם
                         .requestMatchers(
                                 "/api/cakes/all",
                                 "/api/cakes/search",
-                                "/api/categories/all",
-                                "/api/categories/category/**",
+                                "/api/categories/**", // פתחנו זמנית את כל הקטגוריות לבדיקה
                                 "/api/users/register",
                                 "/auth/**"
                         ).permitAll()
 
-                        // הרשאות ADMIN בלבד (משתמש רגיל לא יוכל להיכנס לכאן)
-                        // ✅ תוקן: כוכבית אחת באמצע מותרת, כוכבית כפולה מותרת רק בסוף
                         .requestMatchers("/api/*/admin/**").hasRole("ADMIN")
 
-                        // הרשאות USER
-                        // (בזכות ה-RoleHierarchy שהוספנו למעלה, גם ADMIN יוכל להיכנס לכאן בלי בעיה!)
                         .requestMatchers(
                                 "/api/users/**",
                                 "/api/orders/add",
                                 "/api/cakes/recommend"
                         ).hasRole("USER")
 
-                        // כל השאר דורש התחברות (טוקן חוקי כלשהו)
                         .anyRequest().authenticated()
                 )
-                // מוסיפים את JwtFilter לפני UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // 🔹 PasswordEncoder Bean
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

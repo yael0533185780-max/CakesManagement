@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 import static com.example.cakesmenagement.Entities.Orders.OrderStatus.PAID;
 import static com.example.cakesmenagement.Entities.Payments.PaymentStatus.SUCCESS;
 
-
+@CrossOrigin(origins = "http://localhost:5173")
 @Service
 @Transactional
 public class AdminService {

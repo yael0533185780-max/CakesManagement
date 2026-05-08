@@ -1,5 +1,6 @@
 package com.example.cakesmenagement.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -45,6 +46,7 @@ public class Orders {
     @NotEmpty(message = "הזמנה חייבת להכיל לפחות פריט אחד")
     @OneToMany(cascade = CascadeType.ALL)
    @JoinColumn
+    @JsonIgnore
     private List<OrderItem> cakes;
 
     public enum OrderStatus {

@@ -1,5 +1,6 @@
 package com.example.cakesmenagement.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,5 +26,6 @@ public class Cakes {
     private List<String> recommendation;
     private boolean isActive; // אם העוגה זמינה למכירה
     @ManyToOne
+    @JsonIgnore
     private  Categories category;
 }
