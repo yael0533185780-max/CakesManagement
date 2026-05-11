@@ -26,6 +26,6 @@ public class Cakes {
     private List<String> recommendation;
     private boolean isActive; // אם העוגה זמינה למכירה
     @ManyToOne
-    @JsonIgnore
-    private  Categories category;
+    @JoinColumn(name = "category_code") // מומלץ לתת שם ברור לעמודה
+    private Categories category;
 }

@@ -1,5 +1,6 @@
 package com.example.cakesmenagement.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -37,5 +38,6 @@ public class Users {
     private List<OrderItem> cakesInCart;
     @OneToMany
     @JoinColumn
+    @JsonIgnore
     private List<Orders> userOrders;
 }

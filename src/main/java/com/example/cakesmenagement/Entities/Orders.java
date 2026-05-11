@@ -46,7 +46,6 @@ public class Orders {
     @NotEmpty(message = "הזמנה חייבת להכיל לפחות פריט אחד")
     @OneToMany(cascade = CascadeType.ALL)
    @JoinColumn
-    @JsonIgnore
     private List<OrderItem> cakes;
 
     public enum OrderStatus {
